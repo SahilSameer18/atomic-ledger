@@ -20,6 +20,45 @@ The service supports:
 - cookie-parser for cookie-based auth tokens
 - Nodemailer for email notifications
 
+## Architecture
+
+```mermaid
+flowchart TD
+  Client[API Client / Frontend] -->|REST API over HTTP| Server[Express 5 App]
+  Server -->|JWT cookie or Bearer token| AuthMiddleware[Auth Middleware]
+  Server -->|Route dispatch| Routes[Route Layer]
+  Routes --> AuthRoutes[Auth Routes]
+  Routes --> AccountRoutes[Account Routes]
+  Routes --> TransactionRoutes[Transaction Routes]
+
+  AuthRoutes --> AuthController[Auth Controller]
+  AccountRoutes --> AccountController[Account Controller]
+  TransactionRoutes --> TransactionController[Transaction Controller]
+
+  AuthMiddleware -->|Validate token| UserModel[User Model]
+  AuthMiddleware -->|Check blacklist| BlacklistModel[Blacklist Model]
+
+  AuthController -->|Create user / login / logout| UserModel
+  AuthController -->|Send signup email| EmailService[Email Service]
+
+  AccountController -->|Create account / fetch balance| AccountModel[Account Model]
+
+  TransactionController -->|Validate balances| AccountModel
+  TransactionController -->|Write transaction records| TransactionModel[Transaction Model]
+  TransactionController -->|Write debit and credit entries| LedgerModel[Ledger Model]
+  TransactionController -->|Send transfer email| EmailService
+
+  UserModel --> Database[(MongoDB)]
+  AccountModel --> Database
+  TransactionModel --> Database
+  LedgerModel --> Database
+  BlacklistModel --> Database
+
+  EmailService --> Mailer[Gmail OAuth2]
+  Server --> Parsers["express.json() + cookie-parser"]
+  DB[src/config/db.js] --> Database
+```
+
 ## Project Structure
 
 ```text
